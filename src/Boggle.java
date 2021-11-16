@@ -6,6 +6,7 @@ public class Boggle
     Set<String> wordDictionary; //Set to store the Dictionary
     List<List<Character>> puzzleGrid; //Nested ArrayList to store the Puzzle Grid
     List<char[]> printPuzzle; //List of Arrays to print the Puzzle
+    String outputString;
     List<String> wordsFound; //List of Strings which display the words that are found and the path traversed to find them
     int numRows,numColumns; //Object to dynamically store the number of rows and Columns for future use
     Map<String,String> sequenceMap = new HashMap<>();
@@ -16,6 +17,7 @@ public class Boggle
         wordDictionary= new HashSet<String>(); //List of words to be found
         puzzleGrid = new ArrayList(); //2D ArrayList which stores the Puzzle Grid
         printPuzzle=new ArrayList(); //2D ArrayList which contains a list of character arrays to be printed
+        outputString="";
         wordsFound = new ArrayList<String>(); //List of Words found
         numRows=numColumns=0; //Number of rows and columns in the Puzzle Grid
         /* Map the change in coordinates with a Direction
@@ -83,7 +85,7 @@ public class Boggle
     }
 
     List<String> solve() {
-        List<String> wordsFound = new ArrayList<String>(); //Object to store the words that can be found and the path traversed
+        //List<String> wordsFound = new ArrayList<String>(); //Object to store the words that can be found and the path traversed
         List<List<Boolean>> traversed = new ArrayList<>(); //Nested ArrayList to log if a cell is visited
 
         for(int r=0;r<puzzleGrid.size();r++)
@@ -107,7 +109,7 @@ public class Boggle
                 traverseRecursively(puzzleGrid,traversed,rows,columns,dictionaryWord,path,sequence); //Start from a cell in the grid and traverse to other cells, do this for all the cells
             }
         }
-        //System.out.println("");
+        //System.out.println(wordsFound.toString());
         return wordsFound;
     }
 
@@ -144,14 +146,15 @@ public class Boggle
         }
 
         path+=String.valueOf(numRows-rows) + String.valueOf(columns+1);
-        //path+="\tRow: " + (numRows-rows) + " Column: " + (columns+1);
+
         String newWord;
         newWord=word+puzzleGrid.get(rows).get(columns);//Append the character in current cell to the string and check if it's present in the input list of words
-        //.out.println("WORD: "+newWord);
+
         if(wordDictionary.contains(newWord)) //If a word is encountered record the path, the starting cell's s
         {
-            //System.out.println(newWord+"\t"+newWord+"\t"+newWord+"\t"+"PATH: " + path);
-            System.out.println(newWord+"\t"+path.charAt(0)+"\t"+path.charAt(1)+"\t" + sequence);
+            //System.out.println(newWord+"\t"+path.charAt(0)+"\t"+path.charAt(1)+"\t" + sequence);
+            outputString=newWord+"\t"+path.charAt(0)+"\t"+path.charAt(1)+"\t" + sequence;
+            wordsFound.add(outputString);
             //wordsFound.add();
         }
         /*Attempt to traverse in all 8 directions from the current cell
@@ -172,7 +175,6 @@ public class Boggle
             }
         }
         traversed.get(rows).set(columns,false);
-        sequence="";
     }
 
 
