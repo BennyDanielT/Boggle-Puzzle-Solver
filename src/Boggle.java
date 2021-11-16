@@ -35,11 +35,15 @@ public class Boggle
     }
     boolean getDictionary(BufferedReader stream) throws IOException {
         String word=null;
-
-        while((word=stream.readLine()) != null)//While the end of the file is not reached [&& !(word.isBlank())]   !(word=stream.readLine()).isBlank()
+        word=stream.readLine();
+        while(word != null && !word.equalsIgnoreCase(""))//While the end of the file is not reached
         {
             if(word.isEmpty()) {break;}
-            wordDictionary.add(word); //Add the word to the Dictionary if it's valid
+            if(word.length()>=2)
+            {
+                wordDictionary.add(word); //Add the word to the Dictionary if it's valid
+            }
+            word=stream.readLine();
         }
         System.out.println(wordDictionary.toString());
         return true;
@@ -100,26 +104,31 @@ public class Boggle
 //        System.out.println(traversed.toString());
         String dictionaryWord=""; //String to store each word of the input dictionary
         String sequence="";
-        for(int rows=0;rows<puzzleGrid.size();rows++)
+        for(String word: wordDictionary)
         {
-            for(int columns=0;columns<puzzleGrid.get(rows).size();columns++)
-            {
-                String path=String.valueOf(numRows-rows) + String.valueOf(columns+1); //Formula to start lower left-most cell at (1,1) as instructed in the assignment handout
-                //System.out.println("Path: " + path);
-                traverseRecursively(puzzleGrid,traversed,rows,columns,dictionaryWord,path,sequence); //Start from a cell in the grid and traverse to other cells, do this for all the cells
+            for (int rows = 0; rows < puzzleGrid.size(); rows++) {
+                for (int columns = 0; columns < puzzleGrid.get(rows).size(); columns++) {
+                    if(puzzleGrid.get(rows).get(columns)==word.charAt(0))
+                    {
+                         //String path = String.valueOf(numRows - rows) + String.valueOf(columns + 1);/Formula to start lower left-most cell at (1,1) as instructed in the assignment handout
+                        //System.out.println("Path: " + path);
+                        String path = String.valueOf(columns + 1) + String.valueOf(numRows - rows);
+                        traverseRecursively(puzzleGrid, traversed, rows, columns, dictionaryWord, path, sequence,word); //Start from a cell in the grid and traverse to other cells, do this for all the cells
+                    }
+                }
             }
         }
         //System.out.println(wordsFound.toString());
         return wordsFound;
     }
 
-    private void traverseRecursively(List<List<Character>> puzzleGrid,List<List<Boolean>> traversed,int rows,int columns,String word,String path,String sequence)
+    private void traverseRecursively(List<List<Character>> puzzleGrid,List<List<Boolean>> traversed,int rows,int columns,String word,String path,String sequence,String currWord)
     {
         traversed.get(rows).set(columns,true); //Mark this cell as visited in the Nested Array list
         //path+=String.valueOf(numRows-rows) + String.valueOf(columns+1);
-        int currCoordinateRow=(numRows-rows);
+        int currCoordinateRow=(columns+1);
         //System.out.println("CCROW: " + currCoordinateRow);
-        int currCoordinateColumn=(columns+1);
+        int currCoordinateColumn=(numRows-rows);
         //System.out.println("CCcol: " + currCoordinateColumn);
         int prevCoordinateRow=Character.getNumericValue(path.charAt(path.length()-2));
         //System.out.println("PCRow: " + prevCoordinateRow);
@@ -130,7 +139,7 @@ public class Boggle
         int yTraversal=currCoordinateColumn-prevCoordinateColumn;
         //System.out.println("yChange: " + yTraversal);
 
-        String key=String.valueOf(yTraversal)+String.valueOf(xTraversal);
+        String key=String.valueOf(xTraversal)+String.valueOf(yTraversal);
         //System.out.println("Key: " + key);
         //System.out.println(prevCoordinateRow + "///" + prevCoordinateColumn);
 
@@ -145,7 +154,8 @@ public class Boggle
             sequence += directionLetter;
         }
 
-        path+=String.valueOf(numRows-rows) + String.valueOf(columns+1);
+        //path+=String.valueOf(numRows-rows) + String.valueOf(columns+1);
+        path += String.valueOf(columns + 1) + String.valueOf(numRows - rows);
 
         String newWord;
         newWord=word+puzzleGrid.get(rows).get(columns);//Append the character in current cell to the string and check if it's present in the input list of words
@@ -168,9 +178,9 @@ public class Boggle
             {
                 /*If the new cell is within the boundaries of the grid
                     and has not been traversed in this iteration yet, navigate to the cell*/
-                if(r>=0 && r<puzzleGrid.size() && c>=0 && c<puzzleGrid.get(rows).size() && traversed.get(r).get(c)==false)
+                if(r>=0 && r<puzzleGrid.size() && c>=0 && c<puzzleGrid.get(rows).size() && traversed.get(r).get(c)==false && newWord.length()<currWord.length())
                 {
-                    traverseRecursively(puzzleGrid,traversed,r,c,newWord,path,sequence);
+                    traverseRecursively(puzzleGrid,traversed,r,c,newWord,path,sequence,currWord);
                 }
             }
         }
