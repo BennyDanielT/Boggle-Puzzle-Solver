@@ -9,9 +9,11 @@ public class Boggle
     String outputString;
     List<String> wordsFound; //List of Strings which display the words that are found and the path traversed to find them
     int numRows,numColumns; //Object to dynamically store the number of rows and Columns for future use
-    Map<String,String> sequenceMap = new HashMap<>();
+    Map<String,String> sequenceMap = new HashMap<>(); //Hashmap to store directions corresponding to each traversal sequence
+    Map<String,String> wordStartCoordinates = new HashMap<>();
+    Map<String,String> wordPath = new HashMap<>();
 
-
+    //Constructor
     public Boggle()
     {
         wordDictionary= new HashSet<String>(); //List of words to be found
@@ -34,27 +36,40 @@ public class Boggle
         sequenceMap.put("-1-1","W");
     }
     boolean getDictionary(BufferedReader stream) throws IOException {
-        String word=null;
-        word=stream.readLine();
-        while(word != null && !word.equalsIgnoreCase(""))//While the end of the file is not reached
-        {
-            if(word.isEmpty()) {break;}
-            if(word.length()>=2)
+        try {
+            if (stream == null)
+                throw new IOException("IO Exception, stream ");
+            String word = null;
+            word = stream.readLine();
+            while (word != null && !word.equalsIgnoreCase(""))//While the end of the file is not reached
             {
-                wordDictionary.add(word); //Add the word to the Dictionary if it's valid
+                if (word.isEmpty()) {
+                    break;
+                }
+                if (word.length() >= 2) {
+                    wordDictionary.add(word); //Add the word to the Dictionary if it's valid
+                }
+                word = stream.readLine();
             }
-            word=stream.readLine();
         }
-        System.out.println(wordDictionary.toString());
+        catch(IOException e)
+        {
+            System.out.println("IO Exception encountered, please check your input!");
+        }
+        if(wordDictionary.size()==0) {
+            return false;
+        }
         return true;
     }
 
-    boolean getPuzzle(BufferedReader stream)
+    boolean getPuzzle(BufferedReader stream) throws IOException
     {
-        String line; //Object to store each input line from the user
-        int index=0; //Object which acts as the outer-index of the puzzle grid
         try
             {
+                if(stream==null)
+                    throw new IOException("IO Exception, stream ");
+                String line; //Object to store each input line from the user
+                int index=0; //Object which acts as the outer-index of the puzzle grid
                 while((line=stream.readLine()) != null)
 
                 {
@@ -65,14 +80,14 @@ public class Boggle
 
                     for(char c: line.toCharArray())
                     {
-                        puzzleGrid.get(index).add(c);
+                        puzzleGrid.get(index).add(c); //Add each character of the line to a separate cell in the grid
                     }
                     index+=1; //Add the next line of characters in another nested ArrayList
                 }
             }
             catch (IOException e)
             {
-                e.printStackTrace();
+                System.out.println("IO Exception encountered, please check your input!");
             }
         int rowLength=puzzleGrid.get(0).size();
         numRows=puzzleGrid.size(); //Store the number of rows
@@ -88,8 +103,8 @@ public class Boggle
         return true;
     }
 
-    List<String> solve() {
-        //List<String> wordsFound = new ArrayList<String>(); //Object to store the words that can be found and the path traversed
+    List<String> solve()
+    {
         List<List<Boolean>> traversed = new ArrayList<>(); //Nested ArrayList to log if a cell is visited
 
         for(int r=0;r<puzzleGrid.size();r++)
@@ -100,91 +115,98 @@ public class Boggle
                 traversed.get(r).add(false); //Initialize traversed with false to indicate that none of the cells have been visited
             }
         }
-//        System.out.println("TRAVERSED");
-//        System.out.println(traversed.toString());
         String dictionaryWord=""; //String to store each word of the input dictionary
-        String sequence="";
+        String sequence=""; //String to store the directions of traversals
         for(String word: wordDictionary)
         {
-            for (int rows = 0; rows < puzzleGrid.size(); rows++) {
-                for (int columns = 0; columns < puzzleGrid.get(rows).size(); columns++) {
-                    if(puzzleGrid.get(rows).get(columns)==word.charAt(0))
+            for (int rows = 0; rows < puzzleGrid.size(); rows++)
+            {
+                if (puzzleGrid.get(rows).contains(word.charAt(0))) //Compare the characters of each row only if the row has the starting letter
+                {
+                    for (int columns = 0; columns < puzzleGrid.get(rows).size(); columns++)
                     {
-                         //String path = String.valueOf(numRows - rows) + String.valueOf(columns + 1);/Formula to start lower left-most cell at (1,1) as instructed in the assignment handout
-                        //System.out.println("Path: " + path);
-                        String path = String.valueOf(columns + 1) + String.valueOf(numRows - rows);
-                        traverseRecursively(puzzleGrid, traversed, rows, columns, dictionaryWord, path, sequence,word); //Start from a cell in the grid and traverse to other cells, do this for all the cells
+                        if (puzzleGrid.get(rows).get(columns) == word.charAt(0))
+                        {
+                            String path = String.valueOf(columns + 1) + String.valueOf(numRows - rows); //Formula to start lower left-most cell at (1,1) as instructed in the assignment handout
+                            traverseRecursively(puzzleGrid, traversed, rows, columns, dictionaryWord, path, sequence, word); //Start from a cell in the grid and traverse to other cells, do this for all the cells
+                        }
                     }
                 }
             }
         }
         //System.out.println(wordsFound.toString());
+        for(String value:wordPath.values())
+        {
+            wordsFound.add(value);
+        }
+        Collections.sort(wordsFound);
         return wordsFound;
     }
 
     private void traverseRecursively(List<List<Character>> puzzleGrid,List<List<Boolean>> traversed,int rows,int columns,String word,String path,String sequence,String currWord)
     {
         traversed.get(rows).set(columns,true); //Mark this cell as visited in the Nested Array list
-        //path+=String.valueOf(numRows-rows) + String.valueOf(columns+1);
+
         int currCoordinateRow=(columns+1);
-        //System.out.println("CCROW: " + currCoordinateRow);
         int currCoordinateColumn=(numRows-rows);
-        //System.out.println("CCcol: " + currCoordinateColumn);
+
         int prevCoordinateRow=Character.getNumericValue(path.charAt(path.length()-2));
-        //System.out.println("PCRow: " + prevCoordinateRow);
         int prevCoordinateColumn=Character.getNumericValue(path.charAt(path.length()-1));
-        //System.out.println("PCcol: " + prevCoordinateColumn);
+
         int xTraversal=currCoordinateRow-prevCoordinateRow;
-        //System.out.println("xChange: " + xTraversal);
         int yTraversal=currCoordinateColumn-prevCoordinateColumn;
-        //System.out.println("yChange: " + yTraversal);
-
         String key=String.valueOf(xTraversal)+String.valueOf(yTraversal);
-        //System.out.println("Key: " + key);
-        //System.out.println(prevCoordinateRow + "///" + prevCoordinateColumn);
 
-        if(xTraversal==0 && yTraversal==0)  //That is starting from a new cell
+        if(xTraversal==0 && yTraversal==0)  //That is starting from a new cell, only the start coordinates are required
         {
             sequence = "";
         }
         else
         {
             String directionLetter = sequenceMap.get(key);
-            //System.out.println(directionLetter);
             sequence += directionLetter;
         }
 
-        //path+=String.valueOf(numRows-rows) + String.valueOf(columns+1);
         path += String.valueOf(columns + 1) + String.valueOf(numRows - rows);
-
         String newWord;
         newWord=word+puzzleGrid.get(rows).get(columns);//Append the character in current cell to the string and check if it's present in the input list of words
 
-        if(wordDictionary.contains(newWord)) //If a word is encountered record the path, the starting cell's s
-        {
-            //System.out.println(newWord+"\t"+path.charAt(0)+"\t"+path.charAt(1)+"\t" + sequence);
-            outputString=newWord+"\t"+path.charAt(0)+"\t"+path.charAt(1)+"\t" + sequence;
-            wordsFound.add(outputString);
-            //wordsFound.add();
-        }
-        /*Attempt to traverse in all 8 directions from the current cell
-        * Return if the indices are beyond the edges of the grid or out of bounds
-        * That is,
-        * if row or column < 0
-        * If row or column > the number of rows or columns in the puzzle respectively */
-        for(int r=rows-1;r<=rows+1;r++)
-        {
-            for(int c=columns-1;c<=columns+1;c++)
+            if (wordDictionary.contains(newWord)) //If a word is encountered record the path, the starting cell's s
             {
+                outputString = newWord + "\t" + path.charAt(0) + "\t" + path.charAt(1) + "\t" + sequence;
+                String newStartCoordinates=String.valueOf(path.charAt(0))+String.valueOf(path.charAt(1));
+                if(wordStartCoordinates.containsKey(newWord)) //Check if a solution to the word already exists
+                {
+                    if(wordStartCoordinates.get(newWord).compareTo(newStartCoordinates)>0) //If the new coordinates are at a lower level than the existing coordinates for the word, update the coordinates of the word
+                    {
+                        wordStartCoordinates.put(newWord,newStartCoordinates);
+                        wordPath.put(newWord,outputString);
+                    }
+                }
+                else //If this is the first solution for the word
+                {
+                    wordStartCoordinates.put(newWord,newStartCoordinates);
+                    wordPath.put(newWord,outputString);
+                }
+            }
+            /*Attempt to traverse in all 8 directions from the current cell
+             * Return if the indices are beyond the edges of the grid or out of bounds
+             * That is,
+             * if row or column < 0
+             * If row or column > the number of rows or columns in the puzzle respectively */
+        if(newWord.charAt(newWord.length()-1)==currWord.charAt(newWord.length()-1)) {
+            for (int r = rows - 1; r <= rows + 1; r++) {
+                for (int c = columns - 1; c <= columns + 1; c++) {
                 /*If the new cell is within the boundaries of the grid
                     and has not been traversed in this iteration yet, navigate to the cell*/
-                if(r>=0 && r<puzzleGrid.size() && c>=0 && c<puzzleGrid.get(rows).size() && traversed.get(r).get(c)==false && newWord.length()<currWord.length())
-                {
-                    traverseRecursively(puzzleGrid,traversed,r,c,newWord,path,sequence,currWord);
+                    if (r >= 0 && r < puzzleGrid.size() && c >= 0 && c < puzzleGrid.get(rows).size() && traversed.get(r).get(c) == false && newWord.length() < currWord.length()) {
+                        traverseRecursively(puzzleGrid, traversed, r, c, newWord, path, sequence, currWord);
+                    }
                 }
             }
         }
-        traversed.get(rows).set(columns,false);
+            traversed.get(rows).set(columns, false);
+
     }
 
 
@@ -213,6 +235,3 @@ public class Boggle
         return puzzleString;
     }
 }
-/* Exceptions:
-For Print() (if Puzzlegrid is empty)
- */
